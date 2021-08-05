@@ -1,0 +1,245 @@
+<body>
+	<div class="grass">
+
+		<div class="castle" data-hp='1000'>
+			<img src="castle.png" alt="">
+		</div>
+	</div>
+</body>
+<style>
+	* {
+		margin: 0px;
+		padding: 0px;
+		box-sizing: border-box;
+		font-size: 18px;
+		transition: all 0.6s ease;
+		-webkit-transition: all 0.6s ease;
+		font-family: 'MFONT';
+	}
+
+	body {
+		background: #fff;
+		height: 100vh;
+		width: 100vw;
+		position: relative;
+	}
+
+	.grass {
+		position: absolute;
+		bottom: 100px;
+		border-bottom: #ccc 3px solid;
+		width: 100%;
+		height: 100px;
+		padding-bottom: 20px;
+	}
+
+	.grass img {
+		width: 100px;
+		height: 100px;
+		outline:1px solid #ccc;
+	}
+
+	.monster {
+		animation: move 100s ease-out;
+		position: absolute;
+		transform-origin: center center;
+		left: calc(100% - 200px);
+	}
+
+	.monster::before {
+		content: attr(data-hp);
+		display: block;
+		color: red;
+		font-weight: bold;
+		position: absolute;
+		top: 10px;
+		left: 0;
+	}
+
+	.castle {
+		position: absolute;
+		left: calc(100% - 100px);
+	}
+
+	.castle::after {
+		content: attr(data-hp);
+		display: block;
+		color: rgb(10, 50, 180);
+		font-weight: bold;
+		position: absolute;
+		top: 10px;
+		right: 0;
+	}
+
+	.golem {
+		position: absolute;
+		left: 150px;
+		animation: golem_move 100s ease-out;
+	}
+
+	.golem::after {
+		content: attr(data-hp);
+		display: block;
+		color: rgb(10, 50, 180);
+		font-weight: bold;
+		position: absolute;
+		top: 10px;
+		right: 0;
+	}
+
+	@keyframes move {
+		0% {
+			left: 0;
+		}
+
+		100% {
+			left: calc(100% - 100px);
+		}
+	}
+
+	@keyframes golem_move {
+		0% {
+			left: calc(100% - 200px)
+		}
+
+		100% {
+			left: 150px;
+		}
+	}
+
+	.buru {
+		animation: buru .2s ease;
+	}
+
+	@keyframes buru {
+		0% {
+			transform: translate(0px, 0px) rotateZ(0deg)
+		}
+
+		25% {
+			transform: translate(2px, 2px) rotateZ(1deg)
+		}
+
+		50% {
+			transform: translate(0px, 2px) rotateZ(0deg)
+		}
+
+		75% {
+			transform: translate(2px, 0px) rotateZ(-1deg)
+		}
+
+		100% {
+			transform: translate(0px, 0px) rotateZ(0deg)
+		}
+	}
+</style>
+
+<script>
+	var base = document.getElementsByClassName('grass')[0];
+	var castle = document.getElementsByClassName('castle')[0]
+
+	//audio
+	var punch = new Audio('punch.mp3');
+
+	function summon() {
+		var new_monster = document.createElement('div');
+		var img = document.createElement('img');
+		img.src = Math.floor(Math.random() * 4 + 1) + '.png';
+		new_monster.classList.add('monster');
+		new_monster.dataset.hp = '100';
+		new_monster.appendChild(img);
+		base.appendChild(new_monster);
+	}
+
+	function summon_golem() {
+		var new_golem = document.createElement('div');
+		var img = document.createElement('img');
+		img.src = 'golem.webp';
+		new_golem.classList.add('golem');
+		new_golem.dataset.hp = '100';
+		new_golem.appendChild(img);
+		base.appendChild(new_golem);
+	}
+
+	setInterval(onmove, 100);
+
+	var wait = {
+		a:true,
+		b:true
+	}
+	function onmove() {
+		var e = document.querySelectorAll('.grass > .monster');
+		for (let r of e) {
+			var right = document.body.scrollWidth - r.getBoundingClientRect().right;
+			if (right <= 110 && wait.a) {
+				wait.a=false;
+				setTimeout(() => {
+					wait.a=true;
+				}, 800);
+				punch.play();
+				castle.classList.add('buru');
+				setTimeout(() => {
+					castle.classList.remove('buru');
+				}, 200);
+				castle.dataset.hp = Number(castle.dataset.hp) - 100;
+				if (Number(castle.dataset.hp) <= 0) {
+					castle.remove();
+					setTimeout(() => {
+						alert('敗北')
+					}, 500);
+				}
+			}
+			if(wait.b) {
+				wait.b=false;
+				setTimeout(() => {
+					wait.b=true;
+				}, 800);
+				var mleft = Math.floor(r.getBoundingClientRect().right);
+				for (a of document.getElementsByClassName('golem')) {
+
+					var gleft = Math.floor(a.getBoundingClientRect().left);
+					console.log(mleft+':'+gleft)
+					if ( mleft >= gleft && mleft < gleft+100){
+						r.dataset.hp = Number(r.dataset.hp) - 50;
+						a.dataset.hp = Number(a.dataset.hp) - 30;
+						if (Number(r.dataset.hp) <= 0) {
+							r.remove();
+						}
+						if (Number(a.dataset.hp) <= 0) {
+							a.remove();
+						}
+					}
+				}
+			}
+		}
+	}
+
+	var cli;
+	if (window.ontouchstart === null) {
+		cli = ['touchstart', 'touchend'];
+	} else {
+		cli = ['mousedown', 'mouseup'];
+	}
+	const hover = (target, event) => {
+		var timerID;
+		target.addEventListener(cli[0], function (e) {
+			timerID = setTimeout(event, 1000);
+		});
+		target.addEventListener(cli[1], function (e) {
+			clearTimeout(timerID);
+		});
+	}
+
+	hover(window, summon_golem);
+
+	function start() {
+		for (let h = 0; h < 10; h++) {
+			setTimeout(summon, h * 10000);
+			if ( h===9 ) {
+				setInterval(() => {
+					if(document.getElementsByClassName('monster').length === 0) alert('守備成功！')
+				}, 100);
+			}
+		}
+	}
+</script>
